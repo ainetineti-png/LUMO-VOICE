@@ -1,0 +1,7 @@
+{
+  "name": "Gemini Voice Assistant",
+  "description": "A voice-powered assistant that listens and responds in a continuous, human-like conversation, powered by Google's Gemini API.",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
