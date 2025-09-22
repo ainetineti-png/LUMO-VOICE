@@ -2,6 +2,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { AssistantAvatar } from './components/AssistantAvatar';
 import { ChatMessage } from './components/ChatMessage';
+import { VoiceSelector } from './components/VoiceSelector';
 import { useSpeech } from './hooks/useSpeech';
 import { getAssistantResponse } from './services/geminiService';
 import type { Message, AssistantState } from './types';
@@ -45,6 +46,9 @@ const App: React.FC = () => {
     stopListening,
     cancelInteraction,
     speak,
+    voices,
+    selectedVoice,
+    setVoice,
   } = useSpeech({
     onResult: handleUserInput,
     onSpeechEnd: handleSpeechEnd,
@@ -113,7 +117,17 @@ const App: React.FC = () => {
     <div className="w-full h-screen flex flex-col items-center bg-gray-900 text-white p-4 font-sans">
         <div className="flex-1 w-full max-w-4xl flex flex-col items-center pt-8">
             <h1 className="text-4xl font-bold text-gray-300 mb-2">Gemini Voice Assistant</h1>
-            <p className="text-gray-400 mb-8">Click the orb to start. To interrupt, just start talking.</p>
+            <p className="text-gray-400 mb-4">Click the orb to start. To interrupt, just start talking.</p>
+            
+            <div className="mb-6 w-full max-w-sm">
+              <VoiceSelector
+                voices={voices}
+                currentVoice={selectedVoice}
+                onVoiceChange={setVoice}
+                disabled={assistantState !== 'idle'}
+              />
+            </div>
+            
             <div
               onClick={handleAvatarClick}
               className="cursor-pointer"

@@ -38,6 +38,7 @@ export const useSpeech = ({ onResult, onSpeechEnd, onInterrupt }: UseSpeechProps
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isSupported, setIsSupported] = useState(true);
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
 
   const recognitionRef = useRef<SpeechRecognition | null>(null);
@@ -88,31 +89,43 @@ export const useSpeech = ({ onResult, onSpeechEnd, onInterrupt }: UseSpeechProps
   useEffect(() => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
   
-    const getAndSetVoice = () => {
-      const voices = window.speechSynthesis.getVoices();
-      if (voices.length === 0) return;
+    const loadVoices = () => {
+      const allVoices = window.speechSynthesis.getVoices();
+      if (allVoices.length === 0) return;
 
-      const voicePreferences = [
-        (v: SpeechSynthesisVoice) => v.lang === 'en-IN' && v.name.toLowerCase().includes('female'),
-        (v: SpeechSynthesisVoice) => v.lang === 'en-IN',
-        (v: SpeechSynthesisVoice) => v.lang === 'en-GB' && v.name.toLowerCase().includes('female'),
-        (v: SpeechSynthesisVoice) => v.lang === 'en-US' && v.name.toLowerCase().includes('female'),
-        (v: SpeechSynthesisVoice) => v.lang.startsWith('en-') && v.name.toLowerCase().includes('female'),
-        (v: SpeechSynthesisVoice) => v.name.toLowerCase().includes('female'),
-        (v: SpeechSynthesisVoice) => v.lang.startsWith('en-'),
-      ];
+      setVoices(allVoices);
 
-      let preferredVoice: SpeechSynthesisVoice | undefined;
-      for (const condition of voicePreferences) {
-        preferredVoice = voices.find(condition);
-        if (preferredVoice) break;
+      // Only set a default if one isn't selected yet.
+      if (selectedVoice === null) {
+        const voicePreferences = [
+          (v: SpeechSynthesisVoice) => v.lang === 'en-IN' && v.name.toLowerCase().includes('female'),
+          (v: SpeechSynthesisVoice) => v.lang === 'en-IN',
+          (v: SpeechSynthesisVoice) => v.lang === 'en-GB' && v.name.toLowerCase().includes('female'),
+          (v: SpeechSynthesisVoice) => v.lang === 'en-US' && v.name.toLowerCase().includes('female'),
+          (v: SpeechSynthesisVoice) => v.lang.startsWith('en-') && v.name.toLowerCase().includes('female'),
+          (v: SpeechSynthesisVoice) => v.name.toLowerCase().includes('female'),
+          (v: SpeechSynthesisVoice) => v.lang.startsWith('en-'),
+        ];
+
+        let preferredVoice: SpeechSynthesisVoice | undefined;
+        for (const condition of voicePreferences) {
+          preferredVoice = allVoices.find(condition);
+          if (preferredVoice) break;
+        }
+        
+        setSelectedVoice(preferredVoice || allVoices[0] || null);
       }
-      
-      setSelectedVoice(preferredVoice || voices[0] || null);
     };
 
-    getAndSetVoice();
-    window.speechSynthesis.onvoiceschanged = getAndSetVoice;
+    loadVoices();
+    window.speechSynthesis.onvoiceschanged = loadVoices;
+
+    return () => {
+        if (window.speechSynthesis) {
+            window.speechSynthesis.onvoiceschanged = null;
+        }
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const stopMonitoring = useCallback(() => {
@@ -249,5 +262,16 @@ export const useSpeech = ({ onResult, onSpeechEnd, onInterrupt }: UseSpeechProps
     utteranceRef.current = null;
   }, [stopListening, stopMonitoring]);
 
-  return { isListening, isSpeaking, isSupported, startListening, stopListening, speak, cancelInteraction };
+  return { 
+    isListening,
+    isSpeaking,
+    isSupported,
+    startListening,
+    stopListening,
+    speak,
+    cancelInteraction,
+    voices,
+    selectedVoice,
+    setVoice: setSelectedVoice,
+  };
 };
